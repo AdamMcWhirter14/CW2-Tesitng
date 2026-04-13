@@ -6,7 +6,12 @@ import org.junit.jupiter.params.provider.CsvFileSource;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.*;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class SignupTest {
 
@@ -33,40 +38,67 @@ public class SignupTest {
 
         // --- STEP 1: INITIAL SIGNUP ---
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[data-qa='signup-name']")));
-        js.executeScript("document.querySelector(\"input[data-qa='signup-name']\").value=arguments[0]", name);
-        js.executeScript("document.querySelector(\"input[data-qa='signup-email']\").value=arguments[0]", email);
+
+        // Use empty string if CSV value is null
+        js.executeScript("document.querySelector(\"input[data-qa='signup-name']\").value=arguments[0]", name == null ? "" : name);
+        js.executeScript("document.querySelector(\"input[data-qa='signup-email']\").value=arguments[0]", email == null ? "" : email);
+
+        // Screenshot BEFORE clicking
+        takeScreenshot(scenario, "Step1_Entry_" + name);
+
         js.executeScript("document.querySelector(\"button[data-qa='signup-button']\").click()");
         handleConsent();
 
-        // --- STEP 2: SCENARIO LOGIC ---
+        // --- STEP 2: SCENARIO VALIDATION ---
         switch (scenario) {
             case "FAIL_DUPLICATE":
                 WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//p[contains(text(),'already exist')]")));
-                Assertions.assertTrue(error.isDisplayed(), "Duplicate email error message not found.");
+                takeScreenshot("FAIL", "DuplicateError_" + name);
+                Assertions.assertTrue(error.isDisplayed());
+                break;
+
+            case "FAIL_MISSING_EMAIL":
+            case "FAIL_INVALID_EMAIL":
+                // Take shot of browser tooltip or stayed-on-page state
+                takeScreenshot("FAIL", "InvalidEmail_" + name);
+                Assertions.assertTrue(driver.getCurrentUrl().contains("/signup"));
                 break;
 
             case "SUCCESS":
                 completeFullForm(password, day, month, year, fName, lName, addr1, country, state, city, zip, mobile);
-
-                // 1. Verify basic account creation
                 wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//b[text()='Account Created!']")));
-                Assertions.assertTrue(driver.getPageSource().contains("Account Created"));
 
-                // 2. Security Edge Case: Verify XSS protection
-                // If we injected a <script> tag, ensure no alert popped up (which means the script executed)
-                if (fName.contains("<script>")) {
-                    Assertions.assertThrows(NoAlertPresentException.class, () -> driver.switchTo().alert(),
-                            "CRITICAL: XSS vulnerability found! The script tag in the First Name field was executed.");
+                // Screenshot of final success
+                takeScreenshot("PASS", "AccountCreated_" + fName);
+
+                // Security Check for XSS
+                if (fName != null && fName.contains("<script>")) {
+                    Assertions.assertThrows(NoAlertPresentException.class, () -> driver.switchTo().alert());
                 }
-
-                System.out.println("Handled " + scenario + " with data: " + fName);
                 break;
+        }
+    }
+
+    /**
+     * Captures screenshot and organizes into Pass/Fail subfolders with timestamps.
+     */
+    private void takeScreenshot(String folder, String fileName) {
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss-SSS"));
+            String cleanName = fileName.replaceAll("[^a-zA-Z0-9]", "_");
+            String path = "screenshots/" + folder + "/";
+
+            Files.createDirectories(Paths.get(path));
+
+            File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            Files.copy(src.toPath(), Paths.get(path + cleanName + "_" + timestamp + ".png"));
+        } catch (Exception e) {
+            System.err.println("Screenshot failed: " + e.getMessage());
         }
     }
 
     private void completeFullForm(String... f) {
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
-        // password[0], day[1], month[2], year[3], fName[4], lName[5], addr1[6], country[7], state[8], city[9], zip[10], mobile[11]
         js.executeScript("document.getElementById('password').value=arguments[0]", f[0]);
         js.executeScript("document.getElementById('days').value=arguments[0]", f[1]);
         js.executeScript("document.getElementById('months').value=arguments[0]", f[2]);
