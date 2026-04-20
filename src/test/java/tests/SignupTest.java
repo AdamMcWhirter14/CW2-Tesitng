@@ -52,32 +52,45 @@ public class SignupTest {
         // --- STEP 2: SCENARIO VALIDATION ---
         switch (scenario) {
             case "FAIL_DUPLICATE":
-                WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//p[contains(text(),'already exist')]")));
+                WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//p[contains(text(),'already exist')]")));
                 takeScreenshot("FAIL", "DuplicateError_" + name);
-                Assertions.assertTrue(error.isDisplayed());
+                Assertions.assertTrue(error.isDisplayed(), "Duplicate email error not shown.");
                 break;
 
             case "FAIL_MISSING_EMAIL":
             case "FAIL_INVALID_EMAIL":
-                // Take shot of browser tooltip or stayed-on-page state
                 takeScreenshot("FAIL", "InvalidEmail_" + name);
-                Assertions.assertTrue(driver.getCurrentUrl().contains("/signup"));
+                Assertions.assertTrue(driver.getCurrentUrl().contains("/signup"),
+                        "Expected to stay on signup page for invalid email.");
+                break;
+
+            case "FAIL_REQUIRED":
+                // Navigate to account details form first (requires valid initial signup)
+                wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
+                completeFullForm(password, day, month, year, fName, lName, addr1,
+                        country, state, city, zip, mobile);
+                // If a required field was empty, browser blocks submission
+                // We should NOT see the Account Created page
+                takeScreenshot("FAIL", "RequiredField_" + name);
+                Assertions.assertFalse(driver.getPageSource().contains("Account Created"),
+                        "Form should not have submitted with a required field empty.");
                 break;
 
             case "SUCCESS":
-                completeFullForm(password, day, month, year, fName, lName, addr1, country, state, city, zip, mobile);
-                wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//b[text()='Account Created!']")));
-
-                // Screenshot of final success
+                completeFullForm(password, day, month, year, fName, lName, addr1,
+                        country, state, city, zip, mobile);
+                wait.until(ExpectedConditions.visibilityOfElementLocated(
+                        By.xpath("//b[text()='Account Created!']")));
                 takeScreenshot("PASS", "AccountCreated_" + fName);
+                Assertions.assertTrue(driver.getPageSource().contains("Account Created"));
 
-                // Security Check for XSS
                 if (fName != null && fName.contains("<script>")) {
-                    Assertions.assertThrows(NoAlertPresentException.class, () -> driver.switchTo().alert());
+                    Assertions.assertThrows(NoAlertPresentException.class,
+                            () -> driver.switchTo().alert());
                 }
                 break;
         }
-    }
 
     /**
      * Captures screenshot and organizes into Pass/Fail subfolders with timestamps.
@@ -97,22 +110,22 @@ public class SignupTest {
         }
     }
 
-    private void completeFullForm(String... f) {
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
-        js.executeScript("document.getElementById('password').value=arguments[0]", f[0]);
-        js.executeScript("document.getElementById('days').value=arguments[0]", f[1]);
-        js.executeScript("document.getElementById('months').value=arguments[0]", f[2]);
-        js.executeScript("document.getElementById('years').value=arguments[0]", f[3]);
-        js.executeScript("document.getElementById('first_name').value=arguments[0]", f[4]);
-        js.executeScript("document.getElementById('last_name').value=arguments[0]", f[5]);
-        js.executeScript("document.getElementById('address1').value=arguments[0]", f[6]);
-        js.executeScript("document.getElementById('country').value=arguments[0]", f[7]);
-        js.executeScript("document.getElementById('state').value=arguments[0]", f[8]);
-        js.executeScript("document.getElementById('city').value=arguments[0]", f[9]);
-        js.executeScript("document.getElementById('zipcode').value=arguments[0]", f[10]);
-        js.executeScript("document.getElementById('mobile_number').value=arguments[0]", f[11]);
-        js.executeScript("document.querySelector(\"button[data-qa='create-account']\").click()");
-    }
+        private void completeFullForm(String... f) {
+            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
+            js.executeScript("document.getElementById('password').value=arguments[0]", f[0] == null ? "" : f[0]);
+            js.executeScript("document.getElementById('days').value=arguments[0]", f[1] == null ? "" : f[1]);
+            js.executeScript("document.getElementById('months').value=arguments[0]", f[2] == null ? "" : f[2]);
+            js.executeScript("document.getElementById('years').value=arguments[0]", f[3] == null ? "" : f[3]);
+            js.executeScript("document.getElementById('first_name').value=arguments[0]", f[4] == null ? "" : f[4]);
+            js.executeScript("document.getElementById('last_name').value=arguments[0]", f[5] == null ? "" : f[5]);
+            js.executeScript("document.getElementById('address1').value=arguments[0]", f[6] == null ? "" : f[6]);
+            js.executeScript("document.getElementById('country').value=arguments[0]", f[7] == null ? "" : f[7]);
+            js.executeScript("document.getElementById('state').value=arguments[0]", f[8] == null ? "" : f[8]);
+            js.executeScript("document.getElementById('city').value=arguments[0]", f[9] == null ? "" : f[9]);
+            js.executeScript("document.getElementById('zipcode').value=arguments[0]", f[10] == null ? "" : f[10]);
+            js.executeScript("document.getElementById('mobile_number').value=arguments[0]", f[11] == null ? "" : f[11]);
+            js.executeScript("document.querySelector(\"button[data-qa='create-account']\").click()");
+        }
 
     void handleConsent() {
         try {
