@@ -1,0 +1,9 @@
+linkText,expectedUrlPart,expectedPageText
+Home,automationexercise.com,AutomationExercise
+Products,/products,All Products
+Cart,/view_cart,Shopping Cart
+Signup / Login,/login,New User Signup!
+Test Cases,/test_cases,Test Cases
+API Testing,/api_list,https://automationexercise.com/api
+Video Tutorials,youtube.com,Automation Exercise
+Contact us,/contact_us,Get In Touch
