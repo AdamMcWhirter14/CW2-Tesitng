@@ -1,9 +1,15 @@
 package tests;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -13,7 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class NavigationTest {
@@ -54,8 +60,10 @@ public class NavigationTest {
                     "Page did not contain expected text: " + expectedPageText
             );
 
+            takeScreenshot("SUCCESS_" + makeSafeName(linkText));
+
         } catch (Exception e) {
-            takeScreenshot("FAILED_" + linkText);
+            takeScreenshot("FAIL_" + makeSafeName(linkText));
             throw e;
         }
     }
@@ -75,21 +83,29 @@ public class NavigationTest {
         try {
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
 
-            Files.createDirectories(Path.of("screenshots"));
+            Path folderPath = Path.of("screenshots");
+            Files.createDirectories(folderPath);
 
-            String timestamp = LocalDateTime.now()
-                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+            String timestamp = LocalTime.now()
+                    .format(DateTimeFormatter.ofPattern("HH-mm-ss-SSS"));
 
-            String safeName = fileName.replaceAll("[^a-zA-Z0-9_-]", "_");
+            Path destination = folderPath.resolve(fileName + "_" + timestamp + ".png");
 
             Files.copy(
                     src.toPath(),
-                    Path.of("screenshots", safeName + "_" + timestamp + ".png"),
+                    destination,
                     StandardCopyOption.REPLACE_EXISTING
             );
+
+            System.out.println("Screenshot saved to: " + destination.toAbsolutePath());
+
         } catch (Exception ex) {
             System.out.println("Could not save screenshot: " + ex.getMessage());
         }
+    }
+
+    private String makeSafeName(String text) {
+        return text.replaceAll("[^a-zA-Z0-9]", "_");
     }
 
     @AfterEach
