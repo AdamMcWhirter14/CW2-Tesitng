@@ -1,3 +1,11 @@
+Name,Email,Password,Day,Month,Year,FirstName,LastName,Company,Address1,Address2,Country,State,City,Zipcode,Mobile,ScenarioType
+John Valid,valid.user@mail.com,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,SUCCESS
+Duplicate User,valid.user@mail.com,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_DUPLICATE
+No Name,,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_MISSING_EMAIL
+Bad Email,not-an-email,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_INVALID_EMAIL
+O'Connor-Smith,special.char@mail.com,Pass123!,10,May,1990,Test,User,Tech,123 St,,India,Goa,Panaji,403001,9876543210,SUCCESS
+LongNameRow,long.name@mail.com,Pass123!,10,May,1990,ThisIsAVeryLongFirstNameThatMightBreakTheLayout,LastName,Tech,123 St,,India,Goa,Panaji,403001,9876543210,SUCCESS
+XSS_Test,xss.test@mail.com,Pass123!,10,May,1990,<script>alert(1)</script>,User,Tech,123 St,,India,Goa,Panaji,403001,9876543210,SUCCESS
 Empty Password,emptypass@mail.com,,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_REQUIRED
 Empty FirstName,emptyfname@mail.com,Pass123!,10,May,1990,,Doe,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_REQUIRED
 Empty LastName,emptylname@mail.com,Pass123!,10,May,1990,John,,Tech,123 St,,India,Goa,Panaji,403001,9876543210,FAIL_REQUIRED

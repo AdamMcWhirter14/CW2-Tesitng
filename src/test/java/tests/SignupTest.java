@@ -36,20 +36,21 @@ public class SignupTest {
         driver.get("https://automationexercise.com/signup");
         handleConsent();
 
-        // --- STEP 1: INITIAL SIGNUP ---
         wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("input[data-qa='signup-name']")));
 
-        // Use empty string if CSV value is null
+        // Make email unique for SUCCESS cases to avoid duplicate errors on repeated runs
+        if (scenario.equals("SUCCESS")) {
+            email = email.replace("@", System.currentTimeMillis() + "@");
+        }
+
         js.executeScript("document.querySelector(\"input[data-qa='signup-name']\").value=arguments[0]", name == null ? "" : name);
         js.executeScript("document.querySelector(\"input[data-qa='signup-email']\").value=arguments[0]", email == null ? "" : email);
 
-        // Screenshot BEFORE clicking
-        takeScreenshot(scenario, "Step1_Entry_" + name);
+        takeScreenshot("Step1", "Entry_" + name);
 
         js.executeScript("document.querySelector(\"button[data-qa='signup-button']\").click()");
         handleConsent();
 
-        // --- STEP 2: SCENARIO VALIDATION ---
         switch (scenario) {
             case "FAIL_DUPLICATE":
                 WebElement error = wait.until(ExpectedConditions.visibilityOfElementLocated(
@@ -66,13 +67,40 @@ public class SignupTest {
                 break;
 
             case "FAIL_REQUIRED":
-                // Navigate to account details form first (requires valid initial signup)
                 wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
-                completeFullForm(password, day, month, year, fName, lName, addr1,
-                        country, state, city, zip, mobile);
-                // If a required field was empty, browser blocks submission
-                // We should NOT see the Account Created page
+
+                js.executeScript("document.getElementById('password').value=arguments[0]", password == null ? "" : password);
+                js.executeScript("document.getElementById('days').value=arguments[0]", day == null ? "" : day);
+                js.executeScript("document.getElementById('months').value=arguments[0]", month == null ? "" : month);
+                js.executeScript("document.getElementById('years').value=arguments[0]", year == null ? "" : year);
+                js.executeScript("document.getElementById('first_name').value=arguments[0]", fName == null ? "" : fName);
+                js.executeScript("document.getElementById('last_name').value=arguments[0]", lName == null ? "" : lName);
+                js.executeScript("document.getElementById('address1').value=arguments[0]", addr1 == null ? "" : addr1);
+                js.executeScript("document.getElementById('country').value=arguments[0]", country == null ? "" : country);
+                js.executeScript("document.getElementById('state').value=arguments[0]", state == null ? "" : state);
+                js.executeScript("document.getElementById('city').value=arguments[0]", city == null ? "" : city);
+                js.executeScript("document.getElementById('zipcode').value=arguments[0]", zip == null ? "" : zip);
+                js.executeScript("document.getElementById('mobile_number').value=arguments[0]", mobile == null ? "" : mobile);
+
+                if (password == null || password.isEmpty()) {
+                    js.executeScript("document.getElementById('password').scrollIntoView({block: 'center'})");
+                } else if (fName == null || fName.isEmpty()) {
+                    js.executeScript("document.getElementById('first_name').scrollIntoView({block: 'center'})");
+                } else if (lName == null || lName.isEmpty()) {
+                    js.executeScript("document.getElementById('last_name').scrollIntoView({block: 'center'})");
+                } else if (addr1 == null || addr1.isEmpty()) {
+                    js.executeScript("document.getElementById('address1').scrollIntoView({block: 'center'})");
+                } else if (city == null || city.isEmpty()) {
+                    js.executeScript("document.getElementById('city').scrollIntoView({block: 'center'})");
+                } else if (zip == null || zip.isEmpty()) {
+                    js.executeScript("document.getElementById('zipcode').scrollIntoView({block: 'center'})");
+                } else if (mobile == null || mobile.isEmpty()) {
+                    js.executeScript("document.getElementById('mobile_number').scrollIntoView({block: 'center'})");
+                }
                 takeScreenshot("FAIL", "RequiredField_" + name);
+
+                js.executeScript("document.querySelector(\"button[data-qa='create-account']\").click()");
+
                 Assertions.assertFalse(driver.getPageSource().contains("Account Created"),
                         "Form should not have submitted with a required field empty.");
                 break;
@@ -91,18 +119,14 @@ public class SignupTest {
                 }
                 break;
         }
+    }
 
-    /**
-     * Captures screenshot and organizes into Pass/Fail subfolders with timestamps.
-     */
     private void takeScreenshot(String folder, String fileName) {
         try {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss-SSS"));
             String cleanName = fileName.replaceAll("[^a-zA-Z0-9]", "_");
             String path = "screenshots/" + folder + "/";
-
             Files.createDirectories(Paths.get(path));
-
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
             Files.copy(src.toPath(), Paths.get(path + cleanName + "_" + timestamp + ".png"));
         } catch (Exception e) {
@@ -110,27 +134,28 @@ public class SignupTest {
         }
     }
 
-        private void completeFullForm(String... f) {
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
-            js.executeScript("document.getElementById('password').value=arguments[0]", f[0] == null ? "" : f[0]);
-            js.executeScript("document.getElementById('days').value=arguments[0]", f[1] == null ? "" : f[1]);
-            js.executeScript("document.getElementById('months').value=arguments[0]", f[2] == null ? "" : f[2]);
-            js.executeScript("document.getElementById('years').value=arguments[0]", f[3] == null ? "" : f[3]);
-            js.executeScript("document.getElementById('first_name').value=arguments[0]", f[4] == null ? "" : f[4]);
-            js.executeScript("document.getElementById('last_name').value=arguments[0]", f[5] == null ? "" : f[5]);
-            js.executeScript("document.getElementById('address1').value=arguments[0]", f[6] == null ? "" : f[6]);
-            js.executeScript("document.getElementById('country').value=arguments[0]", f[7] == null ? "" : f[7]);
-            js.executeScript("document.getElementById('state').value=arguments[0]", f[8] == null ? "" : f[8]);
-            js.executeScript("document.getElementById('city').value=arguments[0]", f[9] == null ? "" : f[9]);
-            js.executeScript("document.getElementById('zipcode').value=arguments[0]", f[10] == null ? "" : f[10]);
-            js.executeScript("document.getElementById('mobile_number').value=arguments[0]", f[11] == null ? "" : f[11]);
-            js.executeScript("document.querySelector(\"button[data-qa='create-account']\").click()");
-        }
+    private void completeFullForm(String... f) {
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("password")));
+        js.executeScript("document.getElementById('password').value=arguments[0]", f[0] == null ? "" : f[0]);
+        js.executeScript("document.getElementById('days').value=arguments[0]", f[1] == null ? "" : f[1]);
+        js.executeScript("document.getElementById('months').value=arguments[0]", f[2] == null ? "" : f[2]);
+        js.executeScript("document.getElementById('years').value=arguments[0]", f[3] == null ? "" : f[3]);
+        js.executeScript("document.getElementById('first_name').value=arguments[0]", f[4] == null ? "" : f[4]);
+        js.executeScript("document.getElementById('last_name').value=arguments[0]", f[5] == null ? "" : f[5]);
+        js.executeScript("document.getElementById('address1').value=arguments[0]", f[6] == null ? "" : f[6]);
+        js.executeScript("document.getElementById('country').value=arguments[0]", f[7] == null ? "" : f[7]);
+        js.executeScript("document.getElementById('state').value=arguments[0]", f[8] == null ? "" : f[8]);
+        js.executeScript("document.getElementById('city').value=arguments[0]", f[9] == null ? "" : f[9]);
+        js.executeScript("document.getElementById('zipcode').value=arguments[0]", f[10] == null ? "" : f[10]);
+        js.executeScript("document.getElementById('mobile_number').value=arguments[0]", f[11] == null ? "" : f[11]);
+        js.executeScript("document.querySelector(\"button[data-qa='create-account']\").click()");
+    }
 
     void handleConsent() {
         try {
             new WebDriverWait(driver, Duration.ofSeconds(3))
-                    .until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(.,'Consent')]|//button[text()='AGREE']")))
+                    .until(ExpectedConditions.elementToBeClickable(
+                            By.xpath("//button[contains(.,'Consent')]|//button[text()='AGREE']")))
                     .click();
         } catch (Exception ignored) {}
     }
