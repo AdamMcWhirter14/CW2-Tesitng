@@ -1,0 +1,7 @@
+pageUrl,expectedText,screenshotName
+https://automationexercise.com,Features Items,Home_Content
+https://automationexercise.com/products,All Products,Products_Content
+https://automationexercise.com/contact_us,Get In Touch,Contact_Content
+https://automationexercise.com/test_cases,Test Cases,TestCases_Content
+https://automationexercise.com/login,New User Signup!,Login_Content
+https://automationexercise.com/view_cart,Shopping Cart,Cart_Content
