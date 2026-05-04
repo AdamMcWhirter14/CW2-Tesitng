@@ -13,3 +13,6 @@ Empty Address,emptyaddr@mail.com,Pass123!,10,May,1990,John,Doe,Tech,,,India,Goa,
 Empty City,emptycity@mail.com,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,,403001,9876543210,FAIL_REQUIRED
 Empty Zipcode,emptyzip@mail.com,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,,9876543210,FAIL_REQUIRED
 Empty Mobile,emptymob@mail.com,Pass123!,10,May,1990,John,Doe,Tech,123 St,,India,Goa,Panaji,403001,,FAIL_REQUIRED
+Invalid Postcode,invalidpost@mail.com,Pass123!,10,May,1990,InvalidPostcode,Doe,Tech,123 St,,India,Goa,Panaji,ABCDEF,9876543210,FAIL_FORMAT
+Short Postcode,shortpost@mail.com,Pass123!,10,May,1990,ShortPostcode,Doe,Tech,123 St,,India,Goa,Panaji,12,9876543210,FAIL_FORMAT
+Invalid Mobile,invalidmobile@mail.com,Pass123!,10,May,1990,InvalidMobile,Doe,Tech,123 St,,India,Goa,Panaji,403001,ABCD1234,FAIL_FORMAT

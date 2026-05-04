@@ -105,6 +105,26 @@ public class SignupTest {
                         "Form should not have submitted with a required field empty.");
                 break;
 
+            case "FAIL_FORMAT":
+                completeFullForm(password, day, month, year, fName, lName, addr1,
+                        country, state, city, zip, mobile);
+
+                // Screenshot to capture what the site shows
+                try {
+                    wait.until(ExpectedConditions.visibilityOfElementLocated(
+                            By.xpath("//b[text()='Account Created!']")));
+                    // Account was created — site has no format validation, this is a defect
+                    takeScreenshot("FAIL", "FormatDefect_" + fName);
+                    Assertions.fail("DEFECT: Site accepted invalid format value for " + fName +
+                            " — no format validation enforced.");
+                } catch (AssertionError e) {
+                    throw e;
+                } catch (Exception e) {
+                    // Account was not created — format was correctly rejected
+                    takeScreenshot("FAIL", "FormatRejected_" + fName);
+                }
+                break;
+
             case "SUCCESS":
                 completeFullForm(password, day, month, year, fName, lName, addr1,
                         country, state, city, zip, mobile);
