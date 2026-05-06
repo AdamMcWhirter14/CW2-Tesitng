@@ -13,7 +13,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +27,18 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class NavigationTest {
+    static ExtentReports extent;
+    ExtentTest test;
 
+    @BeforeAll
+    static void initReport() {
+        extent = ExtentReportManager.getInstance();
+    }
+
+    @AfterAll
+    static void flushReport() {
+        ExtentReportManager.flush();
+    }
     // WebDriver used to control the Chrome browser
     WebDriver driver;
 
@@ -45,7 +60,10 @@ public class NavigationTest {
     @ParameterizedTest(name = "Navigation test: {0}")
     @CsvFileSource(resources = "/navigation.csv", numLinesToSkip = 1)
     void testNavigationLinks(String linkText, String expectedUrlPart, String expectedPageText) {
+
+        test = extent.createTest("NavigationTest: " + linkText);
         // Open the homepage before each navigation scenario
+
         driver.get("https://automationexercise.com");
 
         // Dismiss consent popup if it appears
@@ -126,7 +144,11 @@ public class NavigationTest {
                     src.toPath(),
                     destination,
                     StandardCopyOption.REPLACE_EXISTING
+
             );
+            if (test != null) {
+                test.addScreenCaptureFromPath(destination.toAbsolutePath().toString());
+            }
 
             // Print the save path to the console for easier checking
             System.out.println("Screenshot saved to: " + destination.toAbsolutePath());

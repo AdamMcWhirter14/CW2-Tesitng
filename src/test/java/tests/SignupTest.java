@@ -1,5 +1,8 @@
 package tests;
 
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvFileSource;
@@ -20,7 +23,22 @@ public class SignupTest {
 
     WebDriver driver;
     WebDriverWait wait;
-    JavascriptExecutor js; // Used to bypass ad overlays that block standard Selenium interactions
+    JavascriptExecutor js;
+
+    static ExtentReports extent;
+    ExtentTest test;
+
+    // Create the report instance once before all tests in this class
+    @BeforeAll
+    static void initReport() {
+        extent = ExtentReportManager.getInstance();
+    }
+
+    // Flush the report to disk after all tests in this class finish
+    @AfterAll
+    static void flushReport() {
+        ExtentReportManager.flush();
+    }
 
     // Runs before each test - opens a new Chrome browser window
     @BeforeEach
@@ -37,6 +55,9 @@ public class SignupTest {
     void signupScenarios(String name, String email, String password, String day, String month, String year,
                          String fName, String lName, String company, String addr1, String addr2,
                          String country, String state, String city, String zip, String mobile, String scenario) {
+
+        // Create a new test entry in the report for this row
+        test = extent.createTest("SignupTest: " + name + " [" + scenario + "]");
 
         // Open the signup page and dismiss any consent popup
         driver.get("https://automationexercise.com/signup");
@@ -69,6 +90,7 @@ public class SignupTest {
                         By.xpath("//p[contains(text(),'already exist')]")));
                 takeScreenshot("FAIL", "DuplicateError_" + name);
                 Assertions.assertTrue(error.isDisplayed(), "Duplicate email error not shown.");
+                test.log(Status.PASS, "Duplicate email error displayed correctly");
                 break;
 
             // TC-03, TC-04: Missing or invalid email - expects browser to block and stay on /signup
@@ -77,6 +99,7 @@ public class SignupTest {
                 takeScreenshot("FAIL", "InvalidEmail_" + name);
                 Assertions.assertTrue(driver.getCurrentUrl().contains("/signup"),
                         "Expected to stay on signup page for invalid email.");
+                test.log(Status.PASS, "Browser blocked invalid email - stayed on /signup");
                 break;
 
             // TC-08 to TC-14: Required field empty - expects submission to be blocked
@@ -124,6 +147,7 @@ public class SignupTest {
                 // Assert account was NOT created - submission should have been blocked
                 Assertions.assertFalse(driver.getPageSource().contains("Account Created"),
                         "Form should not have submitted with a required field empty.");
+                test.log(Status.PASS, "Required field validation blocked submission correctly");
                 break;
 
             // TC-01, TC-05, TC-06, TC-07: Valid data - expects successful account creation
@@ -136,11 +160,13 @@ public class SignupTest {
                         By.xpath("//b[text()='Account Created!']")));
                 takeScreenshot("PASS", "AccountCreated_" + fName);
                 Assertions.assertTrue(driver.getPageSource().contains("Account Created"));
+                test.log(Status.PASS, "Account created successfully for: " + fName);
 
                 // Extra XSS check - assert no browser alert was triggered by the script tag
                 if (fName != null && fName.contains("<script>")) {
                     Assertions.assertThrows(NoAlertPresentException.class,
                             () -> driver.switchTo().alert());
+                    test.log(Status.PASS, "XSS protection confirmed - no alert triggered");
                 }
                 break;
         }
@@ -152,9 +178,15 @@ public class SignupTest {
             String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH-mm-ss-SSS"));
             String cleanName = fileName.replaceAll("[^a-zA-Z0-9]", "_");
             String path = "screenshots/" + folder + "/";
-            Files.createDirectories(Paths.get(path)); // Creates folder if it doesn't exist
+            Files.createDirectories(Paths.get(path));
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
-            Files.copy(src.toPath(), Paths.get(path + cleanName + "_" + timestamp + ".png"));
+            String screenshotPath = path + cleanName + "_" + timestamp + ".png";
+            Files.copy(src.toPath(), Paths.get(screenshotPath));
+
+            // Attach screenshot to the report
+            if (test != null) {
+                test.addScreenCaptureFromPath(screenshotPath);
+            }
         } catch (Exception e) {
             System.err.println("Screenshot failed: " + e.getMessage());
         }

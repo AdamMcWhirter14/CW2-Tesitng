@@ -13,7 +13,11 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
-
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,7 +26,21 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
+
 public class ContentTest {
+    static ExtentReports extent;
+    ExtentTest test;
+
+    @BeforeAll
+    static void initReport() {
+        extent = ExtentReportManager.getInstance();
+    }
+
+    @AfterAll
+    static void flushReport() {
+        ExtentReportManager.flush();
+    }
+
     // WebDriver used to control the browser
     WebDriver driver;
     // Explicit wait used for page elements and timing stability
@@ -45,6 +63,8 @@ public class ContentTest {
         driver.get(pageUrl);
         // Dismiss consent popup if it appears
         handleConsentIfPresent();
+        // Create a new test entry in the report for this row
+        test = extent.createTest("Content Test: " + screenshotName);
 
         try {
             // Wait until the page body has loaded before checking content
@@ -57,10 +77,11 @@ public class ContentTest {
             );
             // Take a screenshot if the content check passes
             takeScreenshot("SUCCESS_" + makeSafeName(screenshotName));
-
+            test.log(Status.PASS, "Content verified: " + expectedText);
         } catch (Exception e) {
             // Take a screenshot if the test fails
             takeScreenshot("FAIL_" + makeSafeName(screenshotName));
+            test.log(Status.FAIL, "Content check failed: " + e.getMessage());
             // Rethrow the exception so JUnit marks the test as failed
             throw e;
         }
@@ -81,6 +102,7 @@ public class ContentTest {
     }
 
     private void takeScreenshot(String fileName) {
+
         try {
             // Capture the current browser window as an image file
             File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
